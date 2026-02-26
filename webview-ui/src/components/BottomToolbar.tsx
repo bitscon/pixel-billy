@@ -3,7 +3,7 @@ import { SettingsModal } from './SettingsModal.js'
 
 interface BottomToolbarProps {
   isEditMode: boolean
-  onOpenClaude: () => void
+  onOpenBilly: () => void
   onToggleEditMode: () => void
   isDebugMode: boolean
   onToggleDebugMode: () => void
@@ -43,7 +43,7 @@ const btnActive: React.CSSProperties = {
 
 export function BottomToolbar({
   isEditMode,
-  onOpenClaude,
+  onOpenBilly,
   onToggleEditMode,
   isDebugMode,
   onToggleDebugMode,
@@ -54,7 +54,7 @@ export function BottomToolbar({
   return (
     <div style={panelStyle}>
       <button
-        onClick={onOpenClaude}
+        onClick={onOpenBilly}
         onMouseEnter={() => setHovered('agent')}
         onMouseLeave={() => setHovered(null)}
         style={{
@@ -68,7 +68,7 @@ export function BottomToolbar({
           color: 'var(--pixel-agent-text)',
         }}
       >
-        + Agent
+        + Billy
       </button>
       <button
         onClick={onToggleEditMode}

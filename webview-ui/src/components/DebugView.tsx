@@ -4,6 +4,7 @@ import { vscode } from '../vscodeApi.js'
 interface DebugViewProps {
   agents: number[]
   selectedAgent: number | null
+  agentModes: Record<number, 'plan' | 'build'>
   agentTools: Record<number, ToolActivity[]>
   agentStatuses: Record<number, string>
   subagentTools: Record<number, Record<string, ToolActivity[]>>
@@ -53,6 +54,7 @@ function ToolLine({ tool }: { tool: ToolActivity }) {
 export function DebugView({
   agents,
   selectedAgent,
+  agentModes,
   agentTools,
   agentStatuses,
   subagentTools,
@@ -63,6 +65,7 @@ export function DebugView({
     const tools = agentTools[id] || []
     const subs = subagentTools[id] || {}
     const status = agentStatuses[id]
+    const mode = agentModes[id]
     const hasActiveTools = tools.some((t) => !t.done)
     return (
       <div
@@ -103,6 +106,12 @@ export function DebugView({
             ✕
           </button>
         </span>
+        {(mode || status === 'needs-confirmation') && (
+          <div style={{ marginTop: 4, fontSize: '20px', opacity: 0.85 }}>
+            {mode ? `Mode: ${mode}` : 'Mode: unknown'}
+            {status === 'needs-confirmation' ? ' • Needs confirmation' : ''}
+          </div>
+        )}
         {(tools.length > 0 || status === 'waiting') && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 1, marginTop: 4, paddingLeft: 4 }}>
             {tools.map((tool) => (

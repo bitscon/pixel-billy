@@ -6,6 +6,7 @@ import { TILE_SIZE, CharacterState } from '../office/types.js'
 interface AgentLabelsProps {
   officeState: OfficeState
   agents: number[]
+  agentModes: Record<number, 'plan' | 'build'>
   agentStatuses: Record<number, string>
   containerRef: React.RefObject<HTMLDivElement | null>
   zoom: number
@@ -16,6 +17,7 @@ interface AgentLabelsProps {
 export function AgentLabels({
   officeState,
   agents,
+  agentModes,
   agentStatuses,
   containerRef,
   zoom,
@@ -78,7 +80,10 @@ export function AgentLabels({
           dotColor = 'var(--vscode-charts-blue, #3794ff)'
         }
 
-        const labelText = subLabelMap.get(id) || `Agent #${id}`
+        const mode = agentModes[id]
+        const statusSuffix = agentStatuses[id] === 'needs-confirmation' ? ' • confirm' : ''
+        const baseLabel = subLabelMap.get(id) || `Agent #${id}`
+        const labelText = mode ? `${baseLabel} [${mode}]${statusSuffix}` : `${baseLabel}${statusSuffix}`
 
         return (
           <div

@@ -1,7 +1,14 @@
 import type * as vscode from 'vscode';
 
+export interface AgentIdentityRecord {
+	agentId: string;
+	role: string;
+	parentAgentId: string | null;
+}
+
 export interface AgentState {
 	id: number;
+	sessionId: string;
 	terminalRef: vscode.Terminal;
 	projectDir: string;
 	jsonlFile: string;
@@ -15,10 +22,13 @@ export interface AgentState {
 	isWaiting: boolean;
 	permissionSent: boolean;
 	hadToolsInTurn: boolean;
+	currentMode: 'plan' | 'build' | null;
+	agentIdentity: AgentIdentityRecord | null;
 }
 
 export interface PersistedAgent {
 	id: number;
+	sessionId: string;
 	terminalName: string;
 	jsonlFile: string;
 	projectDir: string;

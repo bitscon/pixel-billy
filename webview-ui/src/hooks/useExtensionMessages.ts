@@ -38,6 +38,7 @@ export interface FurnitureAsset {
 export interface ExtensionMessageState {
   agents: number[]
   selectedAgent: number | null
+  agentModes: Record<number, 'plan' | 'build'>
   agentTools: Record<number, ToolActivity[]>
   agentStatuses: Record<number, string>
   subagentTools: Record<number, Record<string, ToolActivity[]>>
@@ -62,6 +63,7 @@ export function useExtensionMessages(
 ): ExtensionMessageState {
   const [agents, setAgents] = useState<number[]>([])
   const [selectedAgent, setSelectedAgent] = useState<number | null>(null)
+  const [agentModes, setAgentModes] = useState<Record<number, 'plan' | 'build'>>({})
   const [agentTools, setAgentTools] = useState<Record<number, ToolActivity[]>>({})
   const [agentStatuses, setAgentStatuses] = useState<Record<number, string>>({})
   const [subagentTools, setSubagentTools] = useState<Record<number, Record<string, ToolActivity[]>>>({})
@@ -71,6 +73,7 @@ export function useExtensionMessages(
 
   // Track whether initial layout has been loaded (ref to avoid re-render)
   const layoutReadyRef = useRef(false)
+  const pendingApprovalRef = useRef<Set<number>>(new Set())
 
   useEffect(() => {
     // Buffer agents from existingAgents until layout is loaded
@@ -109,12 +112,19 @@ export function useExtensionMessages(
         const id = msg.id as number
         setAgents((prev) => (prev.includes(id) ? prev : [...prev, id]))
         setSelectedAgent(id)
+        setAgentModes((prev) => ({ ...prev, [id]: 'plan' }))
         os.addAgent(id)
         saveAgentSeats(os)
       } else if (msg.type === 'agentClosed') {
         const id = msg.id as number
         setAgents((prev) => prev.filter((a) => a !== id))
         setSelectedAgent((prev) => (prev === id ? null : prev))
+        setAgentModes((prev) => {
+          if (!(id in prev)) return prev
+          const next = { ...prev }
+          delete next[id]
+          return next
+        })
         setAgentTools((prev) => {
           if (!(id in prev)) return prev
           const next = { ...prev }
@@ -133,10 +143,17 @@ export function useExtensionMessages(
           delete next[id]
           return next
         })
+        pendingApprovalRef.current.delete(id)
         // Remove all sub-agent characters belonging to this agent
         os.removeAllSubagents(id)
         setSubagentCharacters((prev) => prev.filter((s) => s.parentAgentId !== id))
         os.removeAgent(id)
+      } else if (msg.type === 'agentMode') {
+        const id = msg.id as number
+        const mode = msg.mode as 'plan' | 'build'
+        if (mode === 'plan' || mode === 'build') {
+          setAgentModes((prev) => ({ ...prev, [id]: mode }))
+        }
       } else if (msg.type === 'existingAgents') {
         const incoming = msg.agents as number[]
         const meta = (msg.agentMeta || {}) as Record<number, { palette?: number; hueShift?: number; seatId?: string }>
@@ -220,15 +237,22 @@ export function useExtensionMessages(
             delete next[id]
             return next
           }
+          if (status === 'waiting' && pendingApprovalRef.current.has(id)) {
+            return { ...prev, [id]: 'needs-confirmation' }
+          }
           return { ...prev, [id]: status }
         })
         os.setAgentActive(id, status === 'active')
-        if (status === 'waiting') {
+        if (status === 'active') {
+          pendingApprovalRef.current.delete(id)
+        }
+        if (status === 'waiting' && !pendingApprovalRef.current.has(id)) {
           os.showWaitingBubble(id)
           playDoneSound()
         }
       } else if (msg.type === 'agentToolPermission') {
         const id = msg.id as number
+        pendingApprovalRef.current.add(id)
         setAgentTools((prev) => {
           const list = prev[id]
           if (!list) return prev
@@ -237,6 +261,7 @@ export function useExtensionMessages(
             [id]: list.map((t) => (t.done ? t : { ...t, permissionWait: true })),
           }
         })
+        setAgentStatuses((prev) => ({ ...prev, [id]: 'needs-confirmation' }))
         os.showPermissionBubble(id)
       } else if (msg.type === 'subagentToolPermission') {
         const id = msg.id as number
@@ -248,6 +273,7 @@ export function useExtensionMessages(
         }
       } else if (msg.type === 'agentToolPermissionClear') {
         const id = msg.id as number
+        pendingApprovalRef.current.delete(id)
         setAgentTools((prev) => {
           const list = prev[id]
           if (!list) return prev
@@ -257,6 +283,12 @@ export function useExtensionMessages(
             ...prev,
             [id]: list.map((t) => (t.permissionWait ? { ...t, permissionWait: false } : t)),
           }
+        })
+        setAgentStatuses((prev) => {
+          if (prev[id] !== 'needs-confirmation') return prev
+          const next = { ...prev }
+          delete next[id]
+          return next
         })
         os.clearPermissionBubble(id)
         // Also clear permission bubbles on all sub-agent characters of this parent
@@ -348,5 +380,5 @@ export function useExtensionMessages(
     return () => window.removeEventListener('message', handler)
   }, [getOfficeState])
 
-  return { agents, selectedAgent, agentTools, agentStatuses, subagentTools, subagentCharacters, layoutReady, loadedAssets }
+  return { agents, selectedAgent, agentModes, agentTools, agentStatuses, subagentTools, subagentCharacters, layoutReady, loadedAssets }
 }

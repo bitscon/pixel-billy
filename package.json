@@ -1,7 +1,7 @@
 {
   "name": "pixel-agents",
   "displayName": "Pixel Agents",
-  "description": "Pixel art office where your Claude Code agents come to life as animated characters",
+  "description": "Pixel art office where your Billy Runtime agents come to life as animated characters",
   "version": "1.0.0",
   "publisher": "pablodelucca",
   "repository": {
@@ -46,6 +46,32 @@
           "name": "Pixel Agents"
         }
       ]
+    },
+    "configuration": {
+      "title": "Pixel Agents",
+      "properties": {
+        "pixel-agents.billy.baseUrl": {
+          "type": "string",
+          "default": "http://127.0.0.1:5001",
+          "description": "Base URL for Billy Runtime."
+        },
+        "pixel-agents.billy.askPath": {
+          "type": "string",
+          "default": "/ask",
+          "description": "HTTP path used for Billy Runtime ask requests."
+        },
+        "pixel-agents.billy.healthPath": {
+          "type": "string",
+          "default": "/health",
+          "description": "HTTP path used for Billy Runtime health checks."
+        },
+        "pixel-agents.billy.requestTimeoutMs": {
+          "type": "number",
+          "default": 60000,
+          "minimum": 1000,
+          "description": "Billy Runtime request timeout in milliseconds."
+        }
+      }
     }
   },
   "scripts": {
