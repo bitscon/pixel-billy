@@ -9,34 +9,43 @@ import { startFileWatching, readNewLines } from './fileWatcher.js';
 import { TERMINAL_NAME_PREFIX, WORKSPACE_KEY_AGENTS, WORKSPACE_KEY_AGENT_SEATS, SESSIONS_DIR_NAME } from './constants.js';
 import { migrateAndLoadLayout } from './layoutPersistence.js';
 
-function shellQuote(value: string): string {
-	return `'${value.replace(/'/g, `'"'"'`)}'`;
-}
-
-function buildRunnerCommand(
+function buildRunnerShellArgs(
 	runnerScriptPath: string,
 	jsonlFile: string,
 	sessionId: string,
 	billyConfig: BillyConfig,
-): string {
-	const runAsNode = process.versions.electron ? ' --ms-enable-electron-run-as-node' : '';
-	return [
-		`${shellQuote(process.execPath)}${runAsNode}`,
-		shellQuote(runnerScriptPath),
-		'--transcript-path', shellQuote(jsonlFile),
-		'--base-url', shellQuote(billyConfig.baseUrl),
-		'--ask-path', shellQuote(billyConfig.askPath),
-		'--health-path', shellQuote(billyConfig.healthPath),
-		'--timeout-ms', String(billyConfig.requestTimeoutMs),
-		'--session-id', shellQuote(sessionId),
-	].join(' ');
+): string[] {
+	const args: string[] = [];
+	if (process.versions.electron) {
+		args.push('--ms-enable-electron-run-as-node');
+	}
+	args.push(
+		runnerScriptPath,
+		'--transcript-path',
+		jsonlFile,
+		'--base-url',
+		billyConfig.baseUrl,
+		'--ask-path',
+		billyConfig.askPath,
+		'--health-path',
+		billyConfig.healthPath,
+		'--timeout-ms',
+		String(billyConfig.requestTimeoutMs),
+		'--session-id',
+		sessionId,
+	);
+	return args;
 }
 
 export function getSessionsDirPath(cwd?: string): string | null {
 	const workspacePath = cwd || vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
 	if (!workspacePath) return null;
+	const homeDir = os.homedir();
+	if (!homeDir || !path.isAbsolute(homeDir)) {
+		return null;
+	}
 	const dirName = workspacePath.replace(/[:\\/]/g, '-');
-	return path.join(os.homedir(), '.pixel-agents', SESSIONS_DIR_NAME, dirName);
+	return path.join(homeDir, '.pixel-agents', SESSIONS_DIR_NAME, dirName);
 }
 
 export function launchNewTerminal(
@@ -68,12 +77,22 @@ export function launchNewTerminal(
 	const idx = nextTerminalIndexRef.current++;
 	const sessionId = crypto.randomUUID();
 	const jsonlFile = path.join(projectDir, `${id}.jsonl`);
-	fs.mkdirSync(projectDir, { recursive: true });
-	fs.closeSync(fs.openSync(jsonlFile, 'a'));
+	try {
+		fs.mkdirSync(projectDir, { recursive: true });
+		fs.closeSync(fs.openSync(jsonlFile, 'a'));
+	} catch (error) {
+		const details = error instanceof Error ? error.message : String(error);
+		vscode.window.showErrorMessage(`Pixel Agents: Failed to initialize Billy session storage: ${details}`);
+		return;
+	}
+
+	const runnerArgs = buildRunnerShellArgs(runnerScriptPath, jsonlFile, sessionId, billyConfig);
 
 	const terminal = vscode.window.createTerminal({
 		name: `${TERMINAL_NAME_PREFIX} #${idx}`,
 		cwd,
+		shellPath: process.execPath,
+		shellArgs: runnerArgs,
 	});
 	terminal.show();
 
@@ -104,9 +123,6 @@ export function launchNewTerminal(
 
 	startFileWatching(id, jsonlFile, agents, fileWatchers, pollingTimers, waitingTimers, permissionTimers, webview);
 	readNewLines(id, agents, waitingTimers, permissionTimers, webview);
-
-	const command = buildRunnerCommand(runnerScriptPath, jsonlFile, sessionId, billyConfig);
-	terminal.sendText(command);
 }
 
 export function removeAgent(
@@ -176,9 +192,14 @@ export function restoreAgents(
 		const terminal = liveTerminals.find((candidate) => candidate.name === p.terminalName);
 		if (!terminal) continue;
 
-		fs.mkdirSync(path.dirname(p.jsonlFile), { recursive: true });
-		if (!fs.existsSync(p.jsonlFile)) {
-			fs.writeFileSync(p.jsonlFile, '', 'utf-8');
+		try {
+			fs.mkdirSync(path.dirname(p.jsonlFile), { recursive: true });
+			if (!fs.existsSync(p.jsonlFile)) {
+				fs.writeFileSync(p.jsonlFile, '', 'utf-8');
+			}
+		} catch (error) {
+			console.log(`[Pixel Agents] Failed to restore session file for agent ${p.id}: ${error}`);
+			continue;
 		}
 
 		const agent: AgentState = {

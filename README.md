@@ -40,7 +40,27 @@ cd webview-ui && npm install && cd ..
 npm run build
 ```
 
-Press **F5** in VS Code to launch the Extension Development Host.
+## Package and Install (.vsix)
+
+Build and package the extension:
+
+```bash
+npm run package
+```
+
+Install the generated `.vsix` in a normal VS Code window:
+
+```bash
+code --install-extension pixel-agents-*.vsix
+```
+
+Or use **Extensions: Install from VSIX...** from the VS Code Command Palette.
+
+After install:
+
+1. Open Settings and configure Billy endpoint values if needed (`pixel-agents.billy.*`).
+2. Open the **Pixel Agents** panel.
+3. Click **+ Billy** to spawn a terminal-backed Billy session.
 
 ## Usage
 

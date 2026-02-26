@@ -67,7 +67,7 @@ export class PixelAgentsViewProvider implements vscode.WebviewViewProvider {
 			if (message.type === 'openBilly') {
 				const billyConfig = readBillyConfig();
 				if (!billyConfig) return;
-				const runnerScriptPath = path.join(this.extensionUri.fsPath, 'dist', 'billy-runner.js');
+				const runnerScriptPath = this.context.asAbsolutePath('dist/billy-runner.js');
 				launchNewTerminal(
 					this.nextAgentId,
 					this.nextTerminalIndex,
@@ -216,6 +216,8 @@ export class PixelAgentsViewProvider implements vscode.WebviewViewProvider {
 				if (projectDir) {
 					fs.mkdirSync(projectDir, { recursive: true });
 					vscode.env.openExternal(vscode.Uri.file(projectDir));
+				} else {
+					vscode.window.showErrorMessage('Pixel Agents: Unable to resolve Billy sessions folder for this workspace.');
 				}
 			} else if (message.type === 'exportLayout') {
 				const layout = readLayoutFromFile();

@@ -16,8 +16,20 @@
   "categories": [
     "Other"
   ],
-  "activationEvents": [],
+  "activationEvents": [
+    "onView:pixel-agents.panelView",
+    "onCommand:pixel-agents.showPanel",
+    "onCommand:pixel-agents.exportDefaultLayout"
+  ],
   "main": "./dist/extension.js",
+  "files": [
+    "dist/**",
+    "README.md",
+    "BILLY.md",
+    "LICENSE",
+    "icon.png",
+    "package.json"
+  ],
   "contributes": {
     "commands": [
       {
@@ -75,19 +87,21 @@
     }
   },
   "scripts": {
-    "vscode:prepublish": "npm run package",
+    "vscode:prepublish": "npm run build",
     "build:webview": "cd webview-ui && npm run build",
-    "compile": "npm run check-types && npm run lint && node esbuild.js && npm run build:webview",
-    "build": "npm run compile",
+    "build:extension": "node esbuild.js --production",
+    "build": "npm run check-types && npm run lint && npm run build:extension && npm run build:webview",
     "watch": "npm-run-all -p watch:*",
     "watch:esbuild": "node esbuild.js --watch",
     "watch:tsc": "tsc --noEmit --watch --project tsconfig.json",
-    "package": "npm run check-types && npm run lint && node esbuild.js --production && npm run build:webview",
+    "package:vsix": "vsce package",
+    "package": "npm run build && npm run package:vsix",
     "check-types": "tsc --noEmit",
     "lint": "eslint src",
     "import-tileset": "tsx scripts/import-tileset-cli.ts"
   },
   "devDependencies": {
+    "@vscode/vsce": "2.24.0",
     "@anthropic-ai/sdk": "^0.74.0",
     "@types/node": "22.x",
     "@types/pngjs": "^6.0.5",
@@ -99,5 +113,8 @@
     "tsx": "^4.21.0",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.54.0"
+  },
+  "overrides": {
+    "cheerio": "1.0.0-rc.12"
   }
 }
