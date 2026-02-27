@@ -39,7 +39,7 @@ function buildRunnerShellArgs(
 
 export function getSessionsDirPath(cwd?: string): string | null {
 	const workspacePath = cwd || vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
-	if (!workspacePath) return null;
+	if (!workspacePath) {return null;}
 	const homeDir = os.homedir();
 	if (!homeDir || !path.isAbsolute(homeDir)) {
 		return null;
@@ -135,7 +135,7 @@ export function removeAgent(
 	persistAgents: () => void,
 ): void {
 	const agent = agents.get(agentId);
-	if (!agent) return;
+	if (!agent) {return;}
 
 	fileWatchers.get(agentId)?.close();
 	fileWatchers.delete(agentId);
@@ -182,7 +182,7 @@ export function restoreAgents(
 	doPersist: () => void,
 ): void {
 	const persisted = context.workspaceState.get<PersistedAgent[]>(WORKSPACE_KEY_AGENTS, []);
-	if (persisted.length === 0) return;
+	if (persisted.length === 0) {return;}
 
 	const liveTerminals = vscode.window.terminals;
 	let maxId = 0;
@@ -190,7 +190,7 @@ export function restoreAgents(
 
 	for (const p of persisted) {
 		const terminal = liveTerminals.find((candidate) => candidate.name === p.terminalName);
-		if (!terminal) continue;
+		if (!terminal) {continue;}
 
 		try {
 			fs.mkdirSync(path.dirname(p.jsonlFile), { recursive: true });
@@ -225,11 +225,11 @@ export function restoreAgents(
 		agents.set(p.id, agent);
 		console.log(`[Pixel Agents] Restored agent ${p.id} -> terminal "${p.terminalName}"`);
 
-		if (p.id > maxId) maxId = p.id;
+		if (p.id > maxId) {maxId = p.id;}
 		const match = p.terminalName.match(/#(\d+)$/);
 		if (match) {
 			const idx = Number.parseInt(match[1], 10);
-			if (idx > maxIdx) maxIdx = idx;
+			if (idx > maxIdx) {maxIdx = idx;}
 		}
 
 		try {
@@ -256,7 +256,7 @@ export function sendExistingAgents(
 	context: vscode.ExtensionContext,
 	webview: vscode.Webview | undefined,
 ): void {
-	if (!webview) return;
+	if (!webview) {return;}
 	const agentIds: number[] = [];
 	for (const id of agents.keys()) {
 		agentIds.push(id);
@@ -279,7 +279,7 @@ export function sendCurrentAgentStatuses(
 	agents: Map<number, AgentState>,
 	webview: vscode.Webview | undefined,
 ): void {
-	if (!webview) return;
+	if (!webview) {return;}
 	for (const [agentId, agent] of agents) {
 		for (const [toolId, status] of agent.activeToolStatuses) {
 			webview.postMessage({
@@ -314,7 +314,7 @@ export function sendLayout(
 	webview: vscode.Webview | undefined,
 	defaultLayout?: Record<string, unknown> | null,
 ): void {
-	if (!webview) return;
+	if (!webview) {return;}
 	const layout = migrateAndLoadLayout(context, defaultLayout);
 	webview.postMessage({
 		type: 'layoutLoaded',

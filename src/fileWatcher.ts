@@ -42,11 +42,11 @@ export function readNewLines(
 	webview: vscode.Webview | undefined,
 ): void {
 	const agent = agents.get(agentId);
-	if (!agent) return;
+	if (!agent) {return;}
 
 	try {
 		const stat = fs.statSync(agent.jsonlFile);
-		if (stat.size <= agent.fileOffset) return;
+		if (stat.size <= agent.fileOffset) {return;}
 
 		const buf = Buffer.alloc(stat.size - agent.fileOffset);
 		const fd = fs.openSync(agent.jsonlFile, 'r');
@@ -69,7 +69,7 @@ export function readNewLines(
 		}
 
 		for (const line of lines) {
-			if (!line.trim()) continue;
+			if (!line.trim()) {continue;}
 			processTranscriptLine(agentId, line, agents, waitingTimers, permissionTimers, webview);
 		}
 	} catch (error) {

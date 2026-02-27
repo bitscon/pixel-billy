@@ -30,7 +30,7 @@ export function processTranscriptLine(
 	webview: vscode.Webview | undefined,
 ): void {
 	const agent = agents.get(agentId);
-	if (!agent) return;
+	if (!agent) {return;}
 
 	try {
 		const record = JSON.parse(line) as Record<string, unknown>;
