@@ -62,10 +62,10 @@ export function BottomToolbar({
           padding: '5px 12px',
           background:
             hovered === 'agent'
-              ? 'var(--pixel-agent-hover-bg)'
-              : 'var(--pixel-agent-bg)',
-          border: '2px solid var(--pixel-agent-border)',
-          color: 'var(--pixel-agent-text)',
+              ? 'var(--pixel-billy-hover-bg)'
+              : 'var(--pixel-billy-bg)',
+          border: '2px solid var(--pixel-billy-border)',
+          color: 'var(--pixel-billy-text)',
         }}
       >
         + Billy

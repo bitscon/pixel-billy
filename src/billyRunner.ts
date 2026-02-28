@@ -262,7 +262,7 @@ async function run(): Promise<void> {
 			}
 		} catch (error) {
 			const details = error instanceof Error ? error.message : 'unknown error';
-			const fallback = `Billy Runtime request failed: ${details} Check pixel-agents.billy settings and ensure Billy Runtime is running.`;
+			const fallback = `Billy Runtime request failed: ${details} Check pixel-billy.billy settings and ensure Billy Runtime is running.`;
 			printAssistant(fallback);
 			appendRecord(config.transcriptPath, {
 				type: 'assistant',

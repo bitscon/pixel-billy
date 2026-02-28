@@ -227,7 +227,7 @@ export class PixelAgentsViewProvider implements vscode.WebviewViewProvider {
 				}
 				const uri = await vscode.window.showSaveDialog({
 					filters: { 'JSON Files': ['json'] },
-					defaultUri: vscode.Uri.file(path.join(os.homedir(), 'pixel-agents-layout.json')),
+					defaultUri: vscode.Uri.file(path.join(os.homedir(), 'pixel-billy-layout.json')),
 				});
 				if (uri) {
 					fs.writeFileSync(uri.fsPath, JSON.stringify(layout, null, 2), 'utf-8');

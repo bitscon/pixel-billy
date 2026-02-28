@@ -25,10 +25,10 @@
   --pixel-active-bg: rgba(90, 140, 255, 0.25);
 
   /* Agent button */
-  --pixel-agent-bg: rgba(90, 200, 140, 0.15);
-  --pixel-agent-hover-bg: rgba(90, 200, 140, 0.3);
-  --pixel-agent-border: #5ac88c;
-  --pixel-agent-text: rgba(200, 255, 220, 0.95);
+  --pixel-billy-bg: rgba(90, 200, 140, 0.15);
+  --pixel-billy-hover-bg: rgba(90, 200, 140, 0.3);
+  --pixel-billy-border: #5ac88c;
+  --pixel-billy-text: rgba(200, 255, 220, 0.95);
 
   /* Close button */
   --pixel-close-text: rgba(255, 255, 255, 0.5);

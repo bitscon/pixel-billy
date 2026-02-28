@@ -58,7 +58,7 @@ function normalizeTimeoutMs(raw: number): number {
 }
 
 export function readBillyConfig(): BillyConfig | null {
-	const config = vscode.workspace.getConfiguration('pixel-agents');
+	const config = vscode.workspace.getConfiguration('pixel-billy');
 	const rawBaseUrl = config.get<string>('billy.baseUrl', DEFAULT_BASE_URL) ?? DEFAULT_BASE_URL;
 	const rawAskPath = config.get<string>('billy.askPath', DEFAULT_ASK_PATH) ?? DEFAULT_ASK_PATH;
 	const rawHealthPath = config.get<string>('billy.healthPath', DEFAULT_HEALTH_PATH) ?? DEFAULT_HEALTH_PATH;

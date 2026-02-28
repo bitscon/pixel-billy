@@ -3,7 +3,7 @@
  * Pixel Agents Tileset Import Skill - Complete CLI wrapper for 7-stage asset extraction pipeline
  *
  * Usage:
- *   npx ts-node scripts/import-tileset-cli.ts
+ *   npx tsx scripts/0-import-tileset.ts
  *
  * This script guides you through the complete process of extracting furniture assets
  * from a tileset PNG file and integrating them into the Pixel Agents extension.
@@ -45,8 +45,8 @@ const stages: StageStatus[] = [
     completed: false,
   },
   {
-    name: 'Stage 3: Vision Inspection',
-    description: 'Use Claude vision to auto-generate metadata for each asset',
+    name: 'Stage 3: Metadata Draft Generation',
+    description: 'Generate deterministic metadata defaults for each detected asset',
     completed: false,
     script: 'scripts/3-vision-inspect.ts',
   },
@@ -151,7 +151,7 @@ async function runStage1(tilesetFile: string) {
   if (confirm.toLowerCase() === 'y') {
     try {
       console.log('\n🔄 Running detection...')
-      execSync('npx ts-node scripts/detect-tileset-assets.ts', { stdio: 'inherit' })
+      execSync('npx tsx scripts/1-detect-assets.ts', { stdio: 'inherit' })
       console.log('\n✅ Stage 1 complete!')
       return true
     } catch (err) {
@@ -202,20 +202,18 @@ async function runStage2() {
 }
 
 async function runStage3() {
-  console.log('\n📍 Stage 3: Vision Inspection')
+  console.log('\n📍 Stage 3: Metadata Draft Generation')
   console.log('─'.repeat(60))
-  console.log('Claude vision API analyzes each asset and generates metadata')
+  console.log('Generates metadata defaults from detected assets')
   console.log('Input: asset-editor-output.json + office_tileset_16x16.png')
   console.log('Output: tileset-metadata-draft.json')
-  console.log()
-  console.log('⚠️  Requires ANTHROPIC_API_KEY in .env file')
   console.log()
 
   const confirm = await question('Run Stage 3? (y/n): ')
   if (confirm.toLowerCase() === 'y') {
     try {
-      console.log('\n🔄 Running vision inspection...')
-      execSync('npx ts-node scripts/inspect-assets.ts', { stdio: 'inherit' })
+      console.log('\n🔄 Running metadata draft generation...')
+      execSync('npx tsx scripts/3-vision-inspect.ts', { stdio: 'inherit' })
       console.log('\n✅ Stage 3 complete!')
       return true
     } catch (err) {
@@ -233,7 +231,7 @@ async function runStage4() {
   console.log('Input: tileset-metadata-draft.json')
   console.log('Output: tileset-metadata-final.json')
   console.log()
-  console.log('📝 Open scripts/review-assets.html in a web browser to review')
+  console.log('📝 Open scripts/4-review-metadata.html in a web browser to review')
   console.log('   1. View asset previews (4x zoom with grid)')
   console.log('   2. Edit metadata: name, label, category')
   console.log('   3. Set footprint dimensions (in tiles)')
@@ -279,7 +277,7 @@ async function runStage5() {
   if (confirm.toLowerCase() === 'y') {
     try {
       console.log('\n🔄 Exporting assets...')
-      execSync('npx ts-node scripts/export-tileset-assets.ts', { stdio: 'inherit' })
+      execSync('npx tsx scripts/5-export-assets.ts', { stdio: 'inherit' })
       console.log('\n✅ Stage 5 complete!')
       return true
     } catch (err) {
@@ -368,7 +366,7 @@ async function runPipeline() {
   console.log('📝 Summary:')
   console.log('   Stage 1: ✅ Detection complete')
   console.log('   Stage 2: ✅ Assets edited')
-  console.log('   Stage 3: ✅ Metadata generated')
+  console.log('   Stage 3: ✅ Metadata draft generated')
   console.log('   Stage 4: ✅ Metadata reviewed')
   console.log('   Stage 5: ✅ Assets exported to assets/furniture/')
   console.log('   Stage 6: ✅ Extension bundled')
@@ -379,7 +377,7 @@ async function runPipeline() {
   console.log('   3. Click "Edit" → "Place" to see all your furniture')
   console.log()
   console.log('To run another tileset, execute:')
-  console.log('   npx ts-node scripts/import-tileset-cli.ts')
+  console.log('   npx tsx scripts/0-import-tileset.ts')
   console.log()
 }
 

@@ -45,7 +45,7 @@ export function getSessionsDirPath(cwd?: string): string | null {
 		return null;
 	}
 	const dirName = workspacePath.replace(/[:\\/]/g, '-');
-	return path.join(homeDir, '.pixel-agents', SESSIONS_DIR_NAME, dirName);
+	return path.join(homeDir, '.pixel-billy', SESSIONS_DIR_NAME, dirName);
 }
 
 export function launchNewTerminal(

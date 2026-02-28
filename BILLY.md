@@ -40,7 +40,7 @@ webview-ui/src/
 
 Per workspace transcript root:
 
-`~/.pixel-agents/sessions/<workspace-hash>/`
+`~/.pixel-billy/sessions/<workspace-hash>/`
 
 Per agent transcript file:
 
@@ -65,10 +65,10 @@ Parser handling:
 
 ## VS Code Settings
 
-- `pixel-agents.billy.baseUrl`
-- `pixel-agents.billy.askPath`
-- `pixel-agents.billy.healthPath`
-- `pixel-agents.billy.requestTimeoutMs`
+- `pixel-billy.billy.baseUrl`
+- `pixel-billy.billy.askPath`
+- `pixel-billy.billy.healthPath`
+- `pixel-billy.billy.requestTimeoutMs`
 
 ## Key Constraint
 

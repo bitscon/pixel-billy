@@ -1,0 +1,19 @@
+# Billy-only upstream sync guardrails
+#
+# Format:
+# - path:<repo-relative path>
+# - id:<regex identifier pattern>
+
+# Files that must be manually reviewed before any upstream import.
+path:scripts/0-import-tileset.ts
+path:scripts/3-vision-inspect.ts
+path:package.json
+path:package-lock.json
+
+# Blocked provider identifiers (case-insensitive regex).
+id:\bclaude\b
+id:\banthropic\b
+id:@anthropic-ai/sdk
+id:ANTHROPIC_API_KEY
+id:api\.anthropic\.com
+id:claude-opus

@@ -25,16 +25,16 @@ Each Billy terminal you open spawns a character that walks around, sits at desks
 
 Configured in VS Code settings:
 
-- `pixel-agents.billy.baseUrl` (default `http://127.0.0.1:5001`)
-- `pixel-agents.billy.askPath` (default `/ask`)
-- `pixel-agents.billy.healthPath` (default `/health`)
-- `pixel-agents.billy.requestTimeoutMs` (default `60000`)
+- `pixel-billy.billy.baseUrl` (default `http://127.0.0.1:5001`)
+- `pixel-billy.billy.askPath` (default `/ask`)
+- `pixel-billy.billy.healthPath` (default `/health`)
+- `pixel-billy.billy.requestTimeoutMs` (default `60000`)
 
 ## Install from Source
 
 ```bash
-git clone https://github.com/bitscon/pixel-agent.git
-cd pixel-agent
+git clone https://github.com/bitscon/pixel-billy.git
+cd pixel-billy
 npm install
 cd webview-ui && npm install && cd ..
 npm run build
@@ -51,14 +51,14 @@ npm run package
 Install the generated `.vsix` in a normal VS Code window:
 
 ```bash
-code --install-extension pixel-agents-*.vsix
+code --install-extension pixel-billy-*.vsix
 ```
 
 Or use **Extensions: Install from VSIX...** from the VS Code Command Palette.
 
 After install:
 
-1. Open Settings and configure Billy endpoint values if needed (`pixel-agents.billy.*`).
+1. Open Settings and configure Billy endpoint values if needed (`pixel-billy.billy.*`).
 2. Open the **Pixel Agents** panel.
 3. Click **+ Billy** to spawn a terminal-backed Billy session.
 
@@ -74,7 +74,7 @@ After install:
 
 Pixel Agents launches a bundled Billy terminal runner. The runner sends prompts to Billy Runtime (`/ask`) and writes JSONL transcript records under:
 
-`~/.pixel-agents/sessions/<workspace-hash>/<agent-id>.jsonl`
+`~/.pixel-billy/sessions/<workspace-hash>/<agent-id>.jsonl`
 
 The extension watches each transcript file and maps semantic records to UI state:
 
