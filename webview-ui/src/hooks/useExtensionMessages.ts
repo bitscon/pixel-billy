@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import type { OfficeState } from '../office/engine/officeState.js'
 import type { OfficeLayout, ToolActivity } from '../office/types.js'
 import { extractToolName } from '../office/toolUtils.js'
-import { migrateLayoutColors } from '../office/layout/layoutSerializer.js'
+import { migrateLayoutColors, createDefaultLayout } from '../office/layout/layoutSerializer.js'
 import { buildDynamicCatalog } from '../office/layout/furnitureCatalog.js'
 import { setFloorSprites } from '../office/floorTiles.js'
 import { setWallSprites } from '../office/wallTiles.js'
@@ -73,6 +73,8 @@ export function useExtensionMessages(
 
   // Track whether initial layout has been loaded (ref to avoid re-render)
   const layoutReadyRef = useRef(false)
+  const furnitureAssetsLoadedRef = useRef(false)
+  const layoutRecoverySentRef = useRef(false)
   const pendingApprovalRef = useRef<Set<number>>(new Set())
 
   useEffect(() => {
@@ -92,8 +94,25 @@ export function useExtensionMessages(
         const rawLayout = msg.layout as OfficeLayout | null
         const layout = rawLayout && rawLayout.version === 1 ? migrateLayoutColors(rawLayout) : null
         if (layout) {
-          os.rebuildFromLayout(layout)
-          onLayoutLoaded?.(layout)
+          const hasAssetFurniture = layout.furniture.some(
+            (item) => typeof item.type === 'string' && item.type.toUpperCase().startsWith('ASSET_'),
+          )
+          const shouldRecoverLayout = hasAssetFurniture && !furnitureAssetsLoadedRef.current && !layoutRecoverySentRef.current
+          if (shouldRecoverLayout) {
+            const recoveredLayout = createDefaultLayout()
+            console.warn('[Webview] Incompatible ASSET_* layout detected without furniture assets. Recovering to built-in default layout.')
+            os.rebuildFromLayout(recoveredLayout)
+            onLayoutLoaded?.(recoveredLayout)
+            layoutRecoverySentRef.current = true
+            vscode.postMessage({
+              type: 'recoverLayout',
+              originalLayout: layout,
+              recoveredLayout,
+            })
+          } else {
+            os.rebuildFromLayout(layout)
+            onLayoutLoaded?.(layout)
+          }
         } else {
           // Default layout — snapshot whatever OfficeState built
           onLayoutLoaded?.(os.getLayout())
@@ -367,6 +386,7 @@ export function useExtensionMessages(
           const catalog = msg.catalog as FurnitureAsset[]
           const sprites = msg.sprites as Record<string, string[][]>
           console.log(`📦 Webview: Loaded ${catalog.length} furniture assets`)
+          furnitureAssetsLoadedRef.current = true
           // Build dynamic catalog immediately so getCatalogEntry() works when layoutLoaded arrives next
           buildDynamicCatalog({ catalog, sprites })
           setLoadedAssets({ catalog, sprites })

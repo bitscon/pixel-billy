@@ -106,6 +106,90 @@ npm run lint
 npm run build
 ```
 
+## Upstream Sync Operations
+
+This project uses a tag-driven mirror + backport model to bring in updates from `pablodelucca/pixel-agents` while keeping `main` Billy-only.
+
+- Runbook: `UPSTREAM_SYNC.md`
+- Guard checks: `scripts/check-billy-only.sh`
+- Sync helper: `scripts/upstream-sync.sh`
+- Issue template: `.github/ISSUE_TEMPLATE/upstream-sync.md`
+- PR template: `.github/PULL_REQUEST_TEMPLATE/upstream-sync.md`
+
+### Quick start
+
+```bash
+# Prepare mirror and sync branch for a specific upstream tag
+scripts/upstream-sync.sh prepare --tag <upstream-tag> --push-mirror
+
+# List candidate commits from your last synced upstream ref
+scripts/upstream-sync.sh candidates --from-ref <last-synced-upstream-ref>
+
+# Validate branch before PR
+scripts/upstream-sync.sh validate
+
+# Billy runtime connectivity smoke check (health only)
+npm run check:billy-connectivity
+```
+
+### Full sync cycle (recommended)
+
+1. Open an issue using `.github/ISSUE_TEMPLATE/upstream-sync.md` and fill:
+   - upstream tag you are targeting
+   - last synced upstream ref
+2. Prepare the mirror branch and a backport branch:
+
+```bash
+npm run sync:prepare -- --tag <upstream-tag> --push-mirror
+```
+
+3. List candidate upstream commits since your last synced ref:
+
+```bash
+npm run sync:candidates -- --from-ref <last-synced-upstream-ref>
+```
+
+4. For each candidate, run the diff guard:
+
+```bash
+scripts/upstream-sync.sh verify-commit <commit-sha>
+```
+
+5. Import only approved commits:
+
+```bash
+scripts/upstream-sync.sh backport <commit-sha>
+```
+
+6. Validate Billy-only rules and build:
+
+```bash
+npm run sync:validate
+```
+
+7. Run Billy connectivity checks:
+
+```bash
+# Health endpoint check
+npm run check:billy-connectivity
+
+# Full smoke check (health + ask)
+bash scripts/check-billy-connectivity.sh
+```
+
+8. Open a PR using `.github/PULL_REQUEST_TEMPLATE/upstream-sync.md` and include:
+   - imported commits
+   - adapted commits
+   - rejected commits with rationale
+   - validation and connectivity evidence
+
+### Safety rules
+
+- Never push to `upstream`
+- Never merge `upstream/main` directly into `main`
+- Never bypass `scripts/check-billy-only.sh`
+- Keep provenance for imported commits (`git cherry-pick -x`)
+
 ## License
 
 MIT. See [LICENSE](LICENSE).

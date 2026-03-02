@@ -13,6 +13,11 @@ function getLayoutFilePath(): string {
 	return path.join(os.homedir(), LAYOUT_FILE_DIR, LAYOUT_FILE_NAME);
 }
 
+function formatBackupTimestamp(date: Date): string {
+	const pad = (value: number) => value.toString().padStart(2, '0');
+	return `${date.getFullYear()}${pad(date.getMonth() + 1)}${pad(date.getDate())}-${pad(date.getHours())}${pad(date.getMinutes())}${pad(date.getSeconds())}`;
+}
+
 export function readLayoutFromFile(): Record<string, unknown> | null {
 	const filePath = getLayoutFilePath();
 	try {
@@ -38,6 +43,23 @@ export function writeLayoutToFile(layout: Record<string, unknown>): void {
 		fs.renameSync(tmpPath, filePath);
 	} catch (err) {
 		console.error('[Pixel Agents] Failed to write layout file:', err);
+	}
+}
+
+export function backupLayoutSnapshot(layout: Record<string, unknown>): string | null {
+	const filePath = getLayoutFilePath();
+	const dir = path.dirname(filePath);
+	try {
+		if (!fs.existsSync(dir)) {
+			fs.mkdirSync(dir, { recursive: true });
+		}
+		const backupName = `layout.backup-${formatBackupTimestamp(new Date())}.json`;
+		const backupPath = path.join(dir, backupName);
+		fs.writeFileSync(backupPath, JSON.stringify(layout, null, 2), 'utf-8');
+		return backupPath;
+	} catch (err) {
+		console.error('[Pixel Agents] Failed to write layout backup file:', err);
+		return null;
 	}
 }
 

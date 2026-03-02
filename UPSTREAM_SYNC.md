@@ -1,76 +1,103 @@
-# UPSTREAM_SYNC.md
+# Upstream Sync Runbook
 
-This repository is Billy-only. Upstream imports from `pablodelucca/pixel-agents` must stay Billy-only.
+This repository is Billy-only. Upstream imports from `pablodelucca/pixel-agents` must remain Billy-only.
 
-## Remotes
+## Operating Model
+
+- Sync model: `mirror + backport`
+- Cadence: `tag-driven`
+- `main`: production Billy branch
+- `mirror/upstream-main`: read-only mirror of `upstream/main`
+- `sync/backport-<tag-or-date>`: working branch for selected upstream backports
+
+Do not merge or rebase `upstream/main` directly into `main`. Histories are unrelated after cutover.
+
+## Required Remote Configuration
 
 - `origin`: `https://github.com/bitscon/pixel-billy.git`
 - `upstream`: `https://github.com/pablodelucca/pixel-agents.git` (fetch-only)
-- `upstream` push URL is set to `no_push` and must not be changed.
+- `upstream` push URL must remain `no_push`
 
-## Exclusion Policy (Option B: manifest-driven)
+Check configuration:
+
+```bash
+git remote -v
+git remote get-url --push upstream
+```
+
+## Guardrails
 
 Policy source: `claude_excluded/manifest.txt`
 
-- `path:` rules: files requiring explicit manual review before import.
-- `id:` rules: blocked identifiers that must not appear in repository code.
+- `path:` rules: paths that require manual review before import
+- `id:` rules: blocked identifiers that must not be added
 
-Validation tool: `scripts/check-billy-only.sh`
+Validation script:
 
-- Full-tree validation:
-  - `scripts/check-billy-only.sh`
-- Diff-only validation (for upstream candidates):
-  - `scripts/check-billy-only.sh --diff <git-range>`
+- Full repository: `scripts/check-billy-only.sh`
+- Diff only: `scripts/check-billy-only.sh --diff <git-range>`
 
-## Safe Upstream Sync Workflow
+## Standard Tag-Driven Sync Flow
 
-1. Fetch upstream changes
-
-```bash
-git fetch upstream
-```
-
-2. Create a sync branch
+1. Create a tracking issue using `.github/ISSUE_TEMPLATE/upstream-sync.md`
+2. Prepare mirror + sync branch:
 
 ```bash
-git checkout -b sync/upstream-$(date +%Y%m%d)
+scripts/upstream-sync.sh prepare --tag <upstream-tag> --push-mirror
 ```
 
-3. Inspect incoming commits
+3. List candidate commits since last synced upstream ref:
 
 ```bash
-git log --reverse --oneline origin/main..upstream/main
+scripts/upstream-sync.sh candidates --from-ref <last-synced-upstream-ref>
 ```
 
-4. Pre-screen candidate commits (paths + identifiers)
+4. For each candidate commit, run diff guard:
 
 ```bash
-# Example: validate a specific commit before applying
-scripts/check-billy-only.sh --diff <commit-sha>^..<commit-sha>
+scripts/upstream-sync.sh verify-commit <commit-sha>
 ```
 
-If validation fails, do not import that commit as-is.
-
-5. Apply only safe changes
-
-- Preferred: `git cherry-pick -x <commit-sha>`
-- Alternative: generate/apply a filtered patch for selected hunks only.
-
-6. Re-run validations
+5. Import safe commits with provenance:
 
 ```bash
-scripts/check-billy-only.sh
-npm run build
+scripts/upstream-sync.sh backport <commit-sha>
 ```
 
-7. Commit with provenance
+6. If a commit fails path/identifier guard:
+
+- Do not import as-is
+- Manually adapt safe hunks only, or reject the commit and record reason
+
+7. Validate sync branch:
 
 ```bash
-git commit -m "chore(upstream): sync from pablodelucca/pixel-agents (claude-free)"
+scripts/upstream-sync.sh validate
 ```
+
+8. Run Billy connectivity gate:
+
+```bash
+# Health-only quick check
+npm run check:billy-connectivity
+
+# Full endpoint smoke test (health + ask)
+bash scripts/check-billy-connectivity.sh
+```
+
+9. Open PR from `sync/backport-<...>` to `main` using `.github/PULL_REQUEST_TEMPLATE/upstream-sync.md`
+
+10. In the PR, record:
+
+- Upstream tag consumed
+- Imported commits
+- Adapted commits
+- Rejected commits and rationale
+- Guard/build/connectivity results
 
 ## Non-Negotiable Rules
 
-- Never push to `upstream`.
-- Never import any change that introduces blocked identifiers from `claude_excluded/manifest.txt`.
-- Never import changes to blocked paths without explicit manual review and local edits to keep Billy-only behavior.
+- Never push to `upstream`
+- Never bypass `check-billy-only.sh` for backports
+- Never import blocked identifiers or blocked-path edits without manual adaptation
+- Keep provenance with `cherry-pick -x` or explicit backport commit message

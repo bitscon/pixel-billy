@@ -98,6 +98,11 @@
     "package": "npm run build && npm run package:vsix",
     "check-types": "tsc --noEmit",
     "check:billy-only": "bash scripts/check-billy-only.sh",
+    "check:billy-connectivity": "bash scripts/check-billy-connectivity.sh --skip-ask",
+    "sync:help": "bash scripts/upstream-sync.sh help",
+    "sync:prepare": "bash scripts/upstream-sync.sh prepare",
+    "sync:candidates": "bash scripts/upstream-sync.sh candidates",
+    "sync:validate": "bash scripts/upstream-sync.sh validate",
     "lint": "eslint src",
     "import-tileset": "tsx scripts/0-import-tileset.ts"
   },

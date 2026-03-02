@@ -25,8 +25,28 @@ import {
 	loadDefaultLayout,
 } from './assetLoader.js';
 import { WORKSPACE_KEY_AGENT_SEATS, GLOBAL_KEY_SOUND_ENABLED } from './constants.js';
-import { writeLayoutToFile, readLayoutFromFile, watchLayoutFile } from './layoutPersistence.js';
+import { writeLayoutToFile, readLayoutFromFile, watchLayoutFile, backupLayoutSnapshot } from './layoutPersistence.js';
 import type { LayoutWatcher } from './layoutPersistence.js';
+
+function isValidLayoutPayload(value: unknown): value is Record<string, unknown> {
+	if (!value || typeof value !== 'object') {
+		return false;
+	}
+	const layout = value as Record<string, unknown>;
+	return layout.version === 1 && Array.isArray(layout.tiles) && Array.isArray(layout.furniture);
+}
+
+function getSessionsFolderUri(projectDir: string): vscode.Uri {
+	const workspaceUri = vscode.workspace.workspaceFolders?.[0]?.uri;
+	if (workspaceUri && workspaceUri.scheme !== 'file') {
+		return workspaceUri.with({
+			path: projectDir,
+			query: '',
+			fragment: '',
+		});
+	}
+	return vscode.Uri.file(projectDir);
+}
 
 export class PixelAgentsViewProvider implements vscode.WebviewViewProvider {
 	nextAgentId = { current: 1 };
@@ -43,6 +63,7 @@ export class PixelAgentsViewProvider implements vscode.WebviewViewProvider {
 
 	defaultLayout: Record<string, unknown> | null = null;
 	layoutWatcher: LayoutWatcher | null = null;
+	layoutRecoveryNoticeShown = false;
 
 	constructor(private readonly context: vscode.ExtensionContext) {}
 
@@ -97,6 +118,24 @@ export class PixelAgentsViewProvider implements vscode.WebviewViewProvider {
 			} else if (message.type === 'saveLayout') {
 				this.layoutWatcher?.markOwnWrite();
 				writeLayoutToFile(message.layout as Record<string, unknown>);
+			} else if (message.type === 'recoverLayout') {
+				const originalLayout = message.originalLayout as unknown;
+				const recoveredLayout = message.recoveredLayout as unknown;
+				if (!isValidLayoutPayload(originalLayout) || !isValidLayoutPayload(recoveredLayout)) {
+					vscode.window.showWarningMessage('Pixel Agents: Ignored invalid layout recovery payload.');
+					return;
+				}
+				const backupPath = backupLayoutSnapshot(originalLayout);
+				this.layoutWatcher?.markOwnWrite();
+				writeLayoutToFile(recoveredLayout);
+				if (!this.layoutRecoveryNoticeShown) {
+					this.layoutRecoveryNoticeShown = true;
+					if (backupPath) {
+						vscode.window.showWarningMessage(`Pixel Agents: Recovered incompatible layout. Backup saved to ${backupPath}.`);
+					} else {
+						vscode.window.showWarningMessage('Pixel Agents: Recovered incompatible layout. Backup file could not be created.');
+					}
+				}
 			} else if (message.type === 'setSoundEnabled') {
 				this.context.globalState.update(GLOBAL_KEY_SOUND_ENABLED, message.enabled);
 			} else if (message.type === 'webviewReady') {
@@ -215,7 +254,12 @@ export class PixelAgentsViewProvider implements vscode.WebviewViewProvider {
 				const projectDir = getSessionsDirPath();
 				if (projectDir) {
 					fs.mkdirSync(projectDir, { recursive: true });
-					vscode.env.openExternal(vscode.Uri.file(projectDir));
+					const targetUri = getSessionsFolderUri(projectDir);
+					try {
+						await vscode.commands.executeCommand('revealInExplorer', targetUri);
+					} catch {
+						vscode.window.showErrorMessage(`Pixel Agents: Unable to reveal sessions folder. Path: ${projectDir}`);
+					}
 				} else {
 					vscode.window.showErrorMessage('Pixel Agents: Unable to resolve Billy sessions folder for this workspace.');
 				}
